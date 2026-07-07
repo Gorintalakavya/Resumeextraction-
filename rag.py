@@ -7,86 +7,40 @@ from langchain_google_genai import (
     ChatGoogleGenerativeAI
 )
 
-
-# Load API key
+# -------------------------------
+# Load API Key
+# -------------------------------
 load_dotenv()
-
 GOOGLE_API_KEY = os.getenv("GOOGLE_API_KEY")
 
-
 # -------------------------------
-# 1. Load Embedding Model
+# Load Embedding Model
 # -------------------------------
-
 embeddings = GoogleGenerativeAIEmbeddings(
     model="models/gemini-embedding-001",
     google_api_key=GOOGLE_API_KEY
 )
 
-
 # -------------------------------
-# 2. Load Existing Vector Store
+# Load Vector Store
 # -------------------------------
-
 vectorstore = FAISS.load_local(
     "vector_store",
     embeddings,
     allow_dangerous_deserialization=True
 )
 
-
 # -------------------------------
-# 3. Create Retriever
+# Create Retriever
 # -------------------------------
-
 retriever = vectorstore.as_retriever(
     search_type="similarity",
-    search_kwargs={
-        "k": 5
-    }
+    search_kwargs={"k": 5}
 )
 
-
 # -------------------------------
-# 4. User Query
+# Load Gemini LLM
 # -------------------------------
-
-query = input("\nAsk your resume question: ")
-
-
-# -------------------------------
-# 5. Retrieval Step
-# -------------------------------
-
-docs = retriever.invoke(query)
-
-
-print("\n==============================")
-print("RETRIEVED DOCUMENTS")
-print("==============================")
-
-for i, doc in enumerate(docs):
-    print(f"\nRESULT {i+1}")
-    print("------------------------------")
-    print(doc.page_content[:500])
-
-
-# -------------------------------
-# 6. Prepare Context
-# -------------------------------
-
-context = "\n\n".join(
-    [
-        doc.page_content
-        for doc in docs
-    ]
-)
-
-
-# -------------------------------
-# 7. Load Gemini LLM
-# -------------------------------
-
 llm = ChatGoogleGenerativeAI(
     model="gemini-2.5-flash",
     temperature=0,
@@ -94,12 +48,18 @@ llm = ChatGoogleGenerativeAI(
 )
 
 
-# -------------------------------
-# 8. Generation Prompt
-# -------------------------------
+# =========================================================
+# Function used by both Streamlit and terminal
+# =========================================================
+def ask_question(query):
 
-prompt = f"""
+    docs = retriever.invoke(query)
 
+    context = "\n\n".join(
+        [doc.page_content for doc in docs]
+    )
+
+    prompt = f"""
 You are an AI Resume Screening Assistant.
 
 Use only the resume information provided below.
@@ -107,10 +67,8 @@ Use only the resume information provided below.
 Resume Context:
 {context}
 
-
 User Question:
 {query}
-
 
 Instructions:
 - Identify suitable candidates.
@@ -122,16 +80,26 @@ Instructions:
 Answer:
 """
 
+    response = llm.invoke(prompt)
 
-# -------------------------------
-# 9. Generate Final Answer
-# -------------------------------
-
-response = llm.invoke(prompt)
+    return response.content
 
 
-print("\n==============================")
-print("FINAL ANSWER")
-print("==============================")
+# =========================================================
+# Terminal Mode
+# =========================================================
+if __name__ == "__main__":
 
-print(response.content)
+    while True:
+
+        query = input("\nAsk your resume question (type 'exit' to quit): ")
+
+        if query.lower() == "exit":
+            break
+
+        answer = ask_question(query)
+
+        print("\n==============================")
+        print("FINAL ANSWER")
+        print("==============================")
+        print(answer)
