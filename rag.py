@@ -1,8 +1,6 @@
 import os
 from dotenv import load_dotenv
 
-from langchain_google_genai import ChatGoogleGenerativeAI
-
 from query_engine import retrieve_documents
 from config import LLM_MODEL
 from prompts import SYSTEM_PROMPT
@@ -15,18 +13,29 @@ load_dotenv()
 
 GOOGLE_API_KEY = os.getenv("GOOGLE_API_KEY")
 
-if not GOOGLE_API_KEY:
-    raise ValueError("GOOGLE_API_KEY not found in .env file.")
+llm = None
 
-# =====================================================
-# Load Gemini LLM
-# =====================================================
 
-llm = ChatGoogleGenerativeAI(
-    model=LLM_MODEL,
-    temperature=0,
-    google_api_key=GOOGLE_API_KEY
-)
+def _get_llm():
+    """Create the Gemini client lazily so the app stays responsive."""
+    global llm
+
+    if llm is not None:
+        return llm
+
+    if not GOOGLE_API_KEY:
+        raise ValueError("GOOGLE_API_KEY not found in .env file.")
+
+    from langchain_google_genai import ChatGoogleGenerativeAI
+
+    llm = ChatGoogleGenerativeAI(
+        model=LLM_MODEL,
+        temperature=0,
+        google_api_key=GOOGLE_API_KEY
+    )
+
+    return llm
+
 
 # =====================================================
 # Ask Question Function
@@ -38,14 +47,15 @@ def ask_question(query):
     and generates the final answer using Gemini.
     """
 
-    docs = retrieve_documents(query)
+    try:
+        docs = retrieve_documents(query)
 
-    if not docs:
-        return "No relevant information found in the resumes."
+        if not docs:
+            return "No relevant information found in the resumes."
 
-    context = "\n\n".join(doc.page_content for doc in docs)
+        context = "\n\n".join(doc.page_content for doc in docs)
 
-    prompt = f"""
+        prompt = f"""
 {SYSTEM_PROMPT}
 
 Resume Context:
@@ -65,9 +75,11 @@ Instructions:
 Answer:
 """
 
-    response = llm.invoke(prompt)
+        response = _get_llm().invoke(prompt)
+        return response.content
 
-    return response.content
+    except Exception as exc:
+        return f"Unable to generate an answer. Error: {exc}"
 
 
 # =====================================================

@@ -20,7 +20,7 @@ BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 
 RESUME_FOLDER = os.path.join(BASE_DIR, "Resumes")
 
-VECTOR_DB_PATH = os.path.join(BASE_DIR, "vectorstore")
+VECTOR_DB_PATH = os.path.join(BASE_DIR, "vector_store")
 
 GROUND_TRUTH_FILE = os.path.join(
     BASE_DIR,
