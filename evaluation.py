@@ -1,4 +1,3 @@
-
 """
 This module compares generated answers
 with the Ground Truth Excel.

@@ -1,5 +1,3 @@
-
-
 import os
 from dotenv import load_dotenv
 
@@ -32,5 +30,4 @@ GROUND_TRUTH_FILE = os.path.join(
 
 OUTPUT_FOLDER = os.path.join(BASE_DIR, "output")
 
-# Create output folder automatically
 os.makedirs(OUTPUT_FOLDER, exist_ok=True)

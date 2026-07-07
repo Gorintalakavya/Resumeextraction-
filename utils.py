@@ -1,6 +1,10 @@
-
 import os
 from pathlib import Path
+
+from langchain_community.document_loaders import (
+    PyPDFLoader,
+    Docx2txtLoader,
+)
 
 
 def get_file_extension(file_path):
@@ -21,3 +25,22 @@ def ensure_directory(folder_path):
 
 def print_separator():
     print("=" * 70)
+
+
+def load_resume(file_path):
+    """
+    Load a single PDF or DOCX resume and return LangChain Documents.
+    """
+
+    extension = get_file_extension(file_path)
+
+    if extension == ".pdf":
+        loader = PyPDFLoader(file_path)
+
+    elif extension == ".docx":
+        loader = Docx2txtLoader(file_path)
+
+    else:
+        raise ValueError(f"Unsupported file format: {extension}")
+
+    return loader.load()
