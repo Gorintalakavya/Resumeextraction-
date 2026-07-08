@@ -10,7 +10,10 @@ load_dotenv()
 GOOGLE_API_KEY = os.getenv("GOOGLE_API_KEY")
 
 # Model Names
-EMBEDDING_MODEL = "models/embedding-001"
+# Use a Gemini embedding model known to support embedContent. The previous
+# value ('models/embedding-001') caused a NOT_FOUND error from the provider.
+# If your account supports a different embedding model, replace this value.
+EMBEDDING_MODEL = "models/gemini-embedding-001"
 LLM_MODEL = "gemini-2.5-flash"
 
 # -----------------------------

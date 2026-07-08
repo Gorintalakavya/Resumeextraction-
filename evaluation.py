@@ -2,6 +2,7 @@ from difflib import SequenceMatcher
 import sys
 
 from excel_reader import get_ground_truth
+from logger import logger
 
 
 def calculate_similarity(answer1, answer2):
@@ -37,7 +38,7 @@ def evaluate_answer(question, generated_answer):
     try:
         gt = get_ground_truth(question)
     except Exception as e:
-        print(f"Error loading ground truth: {e}", file=sys.stderr)
+        logger.exception("Error loading ground truth for question: %s", question)
         return {
             "candidate_name": "",
             "ground_truth": f"Error loading ground truth: {e}",
@@ -58,6 +59,8 @@ def evaluate_answer(question, generated_answer):
         generated_answer,
         gt["ground_truth"]
     )
+
+    logger.info("Calculated similarity for question '%s': %s%%", question, similarity)
 
     if similarity >= 90:
         status = "Excellent"

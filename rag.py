@@ -5,6 +5,7 @@ from dotenv import load_dotenv
 from query_engine import retrieve_documents
 from config import LLM_MODEL
 from prompts import SYSTEM_PROMPT
+from logger import logger
 
 # =====================================================
 # Load Environment Variables
@@ -25,6 +26,7 @@ def _get_llm():
         return llm
 
     if not GOOGLE_API_KEY:
+        logger.error("GOOGLE_API_KEY not found in environment when initializing LLM")
         raise ValueError("GOOGLE_API_KEY not found in .env file.")
 
     try:
@@ -33,12 +35,15 @@ def _get_llm():
         raise ImportError(f"Failed to import ChatGoogleGenerativeAI: {e}")
 
     try:
+        logger.info("Initializing Gemini LLM with model: %s", LLM_MODEL)
         llm = ChatGoogleGenerativeAI(
             model=LLM_MODEL,
             temperature=0,
             google_api_key=GOOGLE_API_KEY
         )
+        logger.info("Gemini LLM initialized successfully")
     except Exception as e:
+        logger.exception("Failed to initialize Gemini LLM")
         raise RuntimeError(f"Failed to initialize Gemini LLM: {e}")
 
     return llm
@@ -55,12 +60,20 @@ def ask_question(query):
     """
 
     try:
+        logger.info("User question: %s", query)
+
         docs = retrieve_documents(query)
 
+        logger.info("Documents retrieved for query '%s': %d", query, len(docs) if docs else 0)  # Log retrieval result
+
         if not docs:
+            logger.info("No documents returned by retriever for query: %s", query)
             return "No relevant information found in the resumes."
 
         context = "\n\n".join(doc.page_content for doc in docs)
+
+        logger.info("Retrieved context length (chars): %d", len(context))
+        logger.debug("Context preview: %s", (context[:1000] + '...') if len(context) > 1000 else context)
 
         prompt = f"""
 {SYSTEM_PROMPT}
@@ -82,12 +95,21 @@ Instructions:
 Answer:
 """
 
+        logger.info("Invoking LLM to generate answer; prompt length (chars): %d", len(prompt))
         response = _get_llm().invoke(prompt)
-        return response.content
+        try:
+            content = response.content
+            logger.info("LLM response length (chars): %d", len(content) if content else 0)
+        except Exception:
+            content = str(response)
+            logger.debug("LLM response could not extract .content, using str(response)")
+
+        logger.info("Generated response: %s", (content[:1000] + '...') if content and len(content) > 1000 else content)
+
+        return content
 
     except Exception as exc:
-        error_msg = f"Error generating answer: {str(exc)}"
-        print(error_msg, file=sys.stderr)
+        logger.exception("Error generating answer for query: %s", query)
         return f"Unable to generate an answer. Error: {exc}"
 
 
