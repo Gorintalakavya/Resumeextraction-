@@ -1,4 +1,5 @@
 import os
+import sys
 import pandas as pd
 
 from config import GROUND_TRUTH_FILE
@@ -17,7 +18,10 @@ def load_ground_truth():
             f"Ground Truth file not found: {EXCEL_PATH}"
         )
 
-    df = pd.read_excel(EXCEL_PATH)
+    try:
+        df = pd.read_excel(EXCEL_PATH)
+    except Exception as e:
+        raise RuntimeError(f"Error reading Excel file {EXCEL_PATH}: {e}")
 
     df = df.fillna("")
 

@@ -10,18 +10,11 @@ def calculate_similarity(answer1, answer2):
     """
 
     try:
-        if not answer1 or not answer2:
-            return 0.0
-
-        a1 = str(answer1).strip().lower()
-        a2 = str(answer2).strip().lower()
-
-        # If the ground-truth text appears verbatim in the generated answer,
-        # treat that as a perfect match.
-        if a2 and a2 in a1:
-            return 100.0
-
-        similarity = SequenceMatcher(None, a1, a2).ratio()
+        similarity = SequenceMatcher(
+            None,
+            answer1.lower(),
+            answer2.lower()
+        ).ratio()
     except Exception as e:
         print(f"Error calculating similarity: {e}", file=sys.stderr)
         return 0.0

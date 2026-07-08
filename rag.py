@@ -1,4 +1,5 @@
 import os
+import sys
 from dotenv import load_dotenv
 
 from query_engine import retrieve_documents
@@ -26,13 +27,19 @@ def _get_llm():
     if not GOOGLE_API_KEY:
         raise ValueError("GOOGLE_API_KEY not found in .env file.")
 
-    from langchain_google_genai import ChatGoogleGenerativeAI
+    try:
+        from langchain_google_genai import ChatGoogleGenerativeAI
+    except ImportError as e:
+        raise ImportError(f"Failed to import ChatGoogleGenerativeAI: {e}")
 
-    llm = ChatGoogleGenerativeAI(
-        model=LLM_MODEL,
-        temperature=0,
-        google_api_key=GOOGLE_API_KEY
-    )
+    try:
+        llm = ChatGoogleGenerativeAI(
+            model=LLM_MODEL,
+            temperature=0,
+            google_api_key=GOOGLE_API_KEY
+        )
+    except Exception as e:
+        raise RuntimeError(f"Failed to initialize Gemini LLM: {e}")
 
     return llm
 
@@ -79,6 +86,8 @@ Answer:
         return response.content
 
     except Exception as exc:
+        error_msg = f"Error generating answer: {str(exc)}"
+        print(error_msg, file=sys.stderr)
         return f"Unable to generate an answer. Error: {exc}"
 
 

@@ -11,6 +11,7 @@ from langchain_community.document_loaders import (
 from langchain_text_splitters import RecursiveCharacterTextSplitter
 
 from langchain_google_genai import GoogleGenerativeAIEmbeddings
+from config import EMBEDDING_MODEL, VECTOR_DB_PATH, RESUME_FOLDER
 
 from langchain_community.vectorstores import FAISS
 
@@ -31,8 +32,9 @@ if not GOOGLE_API_KEY:
 # Folder Paths
 # =====================================================
 
-RESUME_FOLDER = "Resumes"
-VECTOR_DB_PATH = "vector_store"
+RESUME_FOLDER = RESUME_FOLDER
+# Use project-configured VECTOR_DB_PATH so vectorstore is saved where the app expects it
+VECTOR_DB_PATH = VECTOR_DB_PATH
 
 
 # =====================================================
@@ -108,9 +110,13 @@ def create_vectorstore(chunks):
 
     print("\nCreating Gemini Embeddings...")
 
-    embeddings = GoogleGenerativeAIEmbeddings(
-    model="models/gemini-embedding-001"
-)
+    try:
+        embeddings = GoogleGenerativeAIEmbeddings(
+            model=EMBEDDING_MODEL,
+            google_api_key=GOOGLE_API_KEY
+        )
+    except Exception as e:
+        raise RuntimeError(f"Failed to initialize embeddings for vectorstore creation: {e}")
 
     vectorstore = FAISS.from_documents(
         documents=chunks,
